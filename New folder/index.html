@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseChat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-screen">
+  <section id="auth-view" class="auth-view">
+    <div class="auth-stage">
+      <div class="auth-brand-panel">
+        <p class="section-label">PulseChat</p>
+        <h1>Your own username, your own inbox, your own space.</h1>
+        <p class="auth-copy">
+          Create an account, get assigned a unique username automatically, and message other users
+          in a cleaner, more polished chat experience.
+        </p>
+
+        <div class="feature-grid">
+          <article class="feature-tile">
+            <span>01</span>
+            <strong>Personal usernames</strong>
+            <p>Every account gets a unique `@username` generated at sign up.</p>
+          </article>
+          <article class="feature-tile">
+            <span>02</span>
+            <strong>Private messaging</strong>
+            <p>Search users, open a conversation, send messages, and remove them when needed.</p>
+          </article>
+          <article class="feature-tile">
+            <span>03</span>
+            <strong>30-day cleanup</strong>
+            <p>Older messages automatically expire after 30 days in the saved browser data.</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="auth-forms-panel">
+        <div class="auth-forms-header">
+          <p class="section-label">Welcome back</p>
+          <h2>Join the conversation</h2>
+          <p>Sign up for a new account or log in to your existing one.</p>
+        </div>
+
+        <div class="auth-layout">
+          <form id="signup-form" class="form-card">
+            <h3>Create account</h3>
+            <label>
+              Display name
+              <input type="text" id="signup-display-name" maxlength="30" placeholder="Jamie Carter" required>
+            </label>
+            <label>
+              Email
+              <input type="email" id="signup-email" placeholder="jamie@example.com" required>
+            </label>
+            <label>
+              Password
+              <input type="password" id="signup-password" minlength="4" placeholder="At least 4 characters" required>
+            </label>
+            <button type="submit" class="primary-btn">Create account</button>
+            <p class="hint">A unique username like <strong>@jamiecarter</strong> is created automatically.</p>
+          </form>
+
+          <form id="login-form" class="form-card alt-card">
+            <h3>Log in</h3>
+            <label>
+              Email
+              <input type="email" id="login-email" placeholder="jamie@example.com" required>
+            </label>
+            <label>
+              Password
+              <input type="password" id="login-password" placeholder="Your password" required>
+            </label>
+            <button type="submit" class="secondary-btn">Log in</button>
+            <p class="hint">Use the same email and password you used when creating your account.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main id="chat-view" class="chat-view hidden">
+    <aside class="sidebar">
+      <div class="sidebar-top card-surface">
+        <div>
+          <p class="section-label">Signed in as</p>
+          <h2 id="current-display-name">User</h2>
+          <p id="current-username" class="username">@username</p>
+        </div>
+        <button id="logout-btn" class="ghost-btn">Log out</button>
+      </div>
+
+      <div class="search-panel card-surface">
+        <label for="user-search">Find users</label>
+        <input id="user-search" type="text" placeholder="Search by name or username">
+      </div>
+
+      <div class="people-panel card-surface">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Directory</p>
+            <h3>People</h3>
+          </div>
+        </div>
+        <div id="user-results" class="user-list"></div>
+      </div>
+    </aside>
+
+    <section class="chat-shell">
+      <header class="display-hero">
+        <div>
+          <p class="section-label">Messaging space</p>
+          <h1>Private conversations with a cleaner display.</h1>
+        </div>
+        <div class="hero-pills">
+          <span>Direct chat</span>
+          <span>Delete messages</span>
+          <span>30 day retention</span>
+        </div>
+      </header>
+
+      <section class="chat-panel card-surface">
+        <div id="chat-empty" class="chat-empty">
+          <p class="section-label">Inbox</p>
+          <h3>Select a user to start messaging.</h3>
+          <p>Your conversations appear here after you open someone from the people list.</p>
+        </div>
+
+        <div id="chat-window" class="chat-window hidden">
+          <div class="chat-header">
+            <div>
+              <p class="section-label">Conversation</p>
+              <h3 id="chat-target-name">User</h3>
+              <p id="chat-target-username" class="username">@username</p>
+            </div>
+          </div>
+
+          <div id="message-list" class="message-list"></div>
+
+          <form id="message-form" class="message-form">
+            <input id="message-input" type="text" maxlength="400" placeholder="Write a message..." required>
+            <button type="submit" class="primary-btn">Send</button>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

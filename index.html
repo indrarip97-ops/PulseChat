@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseChat</title>
+  <link rel="icon" type="image/png" href="assets/pulsechat-favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-screen">
+  <section id="auth-view" class="auth-view">
+    <div class="auth-shell">
+      <div class="auth-forms-panel auth-single-panel">
+        <div class="auth-forms-header">
+          <p class="section-label">PulseChat</p>
+          <h2 id="auth-heading">Create account</h2>
+        </div>
+
+        <div class="auth-switcher">
+          <button id="show-signup-btn" type="button" class="auth-switch-btn active">Create account</button>
+          <button id="show-login-btn" type="button" class="auth-switch-btn">Log in</button>
+        </div>
+
+        <form id="signup-form" class="form-card auth-form-panel">
+          <label>
+            Display name
+            <input type="text" id="signup-display-name" maxlength="30" placeholder="Jamie Carter" required>
+          </label>
+          <label>
+            Email
+            <input type="email" id="signup-email" placeholder="jamie@example.com" required>
+          </label>
+          <label>
+            Password
+            <input type="password" id="signup-password" minlength="4" placeholder="At least 4 characters" required>
+          </label>
+          <button type="submit" class="primary-btn">Create account</button>
+        </form>
+
+        <form id="login-form" class="form-card auth-form-panel hidden">
+          <label>
+            Email
+            <input type="email" id="login-email" placeholder="jamie@example.com" required>
+          </label>
+          <label>
+            Password
+            <input type="password" id="login-password" placeholder="Your password" required>
+          </label>
+          <button type="submit" class="secondary-btn">Log in</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <main id="chat-view" class="chat-view hidden">
+    <aside class="sidebar">
+      <div class="sidebar-top card-surface">
+        <div>
+          <p class="section-label">Signed in as</p>
+          <h2 id="current-display-name">User</h2>
+          <p id="current-username" class="username">@username</p>
+        </div>
+        <div class="sidebar-actions">
+          <button id="theme-btn" class="ghost-btn">Customize</button>
+          <button id="logout-btn" class="ghost-btn">Log out</button>
+        </div>
+      </div>
+
+      <div class="friends-nav card-surface">
+        <button id="friends-btn" type="button" class="friends-nav-btn active">Friends</button>
+      </div>
+
+      <div id="theme-panel" class="theme-panel card-surface hidden">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Theme Studio</p>
+            <h3>Make PulseChat yours</h3>
+          </div>
+        </div>
+        <div id="theme-options" class="theme-options"></div>
+      </div>
+
+      <div class="sidebar-brand">
+        <img src="assets/pulsechat-logo.png" alt="PulseChat logo" class="sidebar-brand-logo">
+        <span class="sidebar-brand-name">PulseChat</span>
+      </div>
+
+      <div class="search-panel card-surface">
+        <label for="user-search">Find users</label>
+        <input id="user-search" type="text" placeholder="Search by name or username">
+      </div>
+
+      <div class="people-panel card-surface">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Directory</p>
+            <h3>People</h3>
+          </div>
+        </div>
+        <div id="user-results" class="user-list"></div>
+      </div>
+    </aside>
+
+    <section class="chat-shell">
+      <header class="display-hero">
+        <div class="hero-top">
+          <div>
+            <p class="section-label">Your vibe</p>
+            <div id="liked-banner" class="liked-banner">Set what you like</div>
+          </div>
+          <button id="change-liked-btn" type="button" class="ghost-btn hero-action-btn" onclick="window.pulseChatChangeLoved && window.pulseChatChangeLoved()">Change loved</button>
+        </div>
+        <div>
+          <p class="section-label">Messaging space</p>
+          <h1 id="hero-title" class="hero-title-muted">PulseChat</h1>
+        </div>
+        <div class="hero-pills">
+          <span>Direct chat</span>
+          <span>Delete messages</span>
+          <span>30 day retention</span>
+        </div>
+        <div id="liked-editor" class="liked-editor hidden">
+          <label for="liked-input">What do you love?</label>
+          <div class="liked-editor-row">
+            <input id="liked-input" type="text" maxlength="40" placeholder="anime, football, music, fashion...">
+            <button id="save-liked-btn" type="button" class="primary-btn">Save</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="chat-panel card-surface">
+        <div id="chat-empty" class="chat-empty">
+          <p class="section-label">Inbox</p>
+          <h3>Select a user to start messaging.</h3>
+          <p>Your conversations appear here after you open someone from the people list.</p>
+        </div>
+
+        <div id="chat-window" class="chat-window hidden">
+          <div class="chat-header">
+            <div class="chat-header-main">
+              <button id="back-to-friends-btn" type="button" class="ghost-btn chat-back-btn hidden">Friends</button>
+              <div>
+              <p class="section-label">Conversation</p>
+              <h3 id="chat-target-name">User</h3>
+              <p id="chat-target-username" class="username">@username</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="message-list" class="message-list"></div>
+
+          <form id="message-form" class="message-form">
+            <div id="composer-preview" class="composer-preview hidden"></div>
+            <div class="composer-shell">
+              <input id="file-input" type="file" accept="image/*,video/*" class="hidden">
+              <button id="upload-btn" type="button" class="icon-btn" aria-label="Upload image or video">+</button>
+              <div class="message-input-wrap">
+                <input id="message-input" type="text" maxlength="400" placeholder="Write a message...">
+                <div id="emoji-picker" class="emoji-picker hidden"></div>
+              </div>
+              <button id="emoji-btn" type="button" class="icon-btn" aria-label="Open emoji picker">&#9786;</button>
+              <button id="send-btn" type="button" class="primary-btn">Send</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
