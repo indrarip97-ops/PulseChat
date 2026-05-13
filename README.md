@@ -8,10 +8,11 @@ PulseChat is a simple browser-based messaging website demo.
 - Each account gets its own automatically generated unique username
 - Log in to an existing account
 - Search other users by display name or username
-- Send direct messages between users
+- Send, receive, accept, and decline friend requests
+- Send direct messages between connected friends
 - Delete messages from a conversation
 - Automatically remove messages after 30 days
-- Data is saved locally in the browser with `localStorage`
+- Data is saved locally in the browser with IndexedDB
 
 ## How to run
 

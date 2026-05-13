@@ -23,6 +23,7 @@ const THEMES = [
 const state = {
   users: [],
   messages: [],
+  friendRequests: [],
   currentUserId: null,
   activeChatUserId: null,
   pendingAttachment: null,
@@ -152,13 +153,23 @@ async function loadState() {
 
   state.users = parsed.users || [];
   state.messages = parsed.messages || [];
+  state.friendRequests = parsed.friendRequests || [];
   state.currentUserId = parsed.currentUserId || null;
   state.users = state.users.map((user) => ({
     ...user,
     themeId: user.themeId || DEFAULT_THEME_ID,
     likedThing: user.likedThing || "",
   }));
+  state.friendRequests = state.friendRequests.filter((request) => (
+    request &&
+    request.fromUserId &&
+    request.toUserId &&
+    request.fromUserId !== request.toUserId &&
+    state.users.some((user) => user.id === request.fromUserId) &&
+    state.users.some((user) => user.id === request.toUserId)
+  ));
   cleanupExpiredMessages();
+  ensureActiveChatIsValid();
 }
 
 async function saveState() {
@@ -166,6 +177,7 @@ async function saveState() {
   await writePersistedState({
     users: state.users,
     messages: state.messages,
+    friendRequests: state.friendRequests,
     currentUserId: state.currentUserId,
   });
 }
@@ -190,6 +202,16 @@ function createMessageRecord(fromUserId, toUserId, text, attachment = null) {
     toUserId,
     text,
     attachment,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function createFriendRequestRecord(fromUserId, toUserId) {
+  return {
+    id: crypto.randomUUID(),
+    fromUserId,
+    toUserId,
+    status: "pending",
     createdAt: new Date().toISOString(),
   };
 }
@@ -226,6 +248,44 @@ function getCurrentUser() {
 
 function getUserById(userId) {
   return state.users.find((user) => user.id === userId) || null;
+}
+
+function getRequestBetween(userAId, userBId) {
+  return state.friendRequests.find((request) => (
+    [request.fromUserId, request.toUserId].includes(userAId) &&
+    [request.fromUserId, request.toUserId].includes(userBId)
+  )) || null;
+}
+
+function hasConversationHistory(userAId, userBId) {
+  return state.messages.some((message) => (
+    (message.fromUserId === userAId && message.toUserId === userBId) ||
+    (message.fromUserId === userBId && message.toUserId === userAId)
+  ));
+}
+
+function areFriends(userAId, userBId) {
+  const request = getRequestBetween(userAId, userBId);
+  return request?.status === "accepted" || hasConversationHistory(userAId, userBId);
+}
+
+function getPendingIncomingRequests(userId) {
+  return state.friendRequests.filter((request) => request.toUserId === userId && request.status === "pending");
+}
+
+function ensureActiveChatIsValid() {
+  if (!state.currentUserId || !state.activeChatUserId) {
+    return;
+  }
+
+  if (!areFriends(state.currentUserId, state.activeChatUserId)) {
+    state.activeChatUserId = null;
+    state.viewMode = "friends";
+  }
+}
+
+function resetPeopleSearch() {
+  els.userSearch.value = "";
 }
 
 function showToast(message) {
@@ -457,56 +517,221 @@ function renderUserList() {
   }
 
   const query = els.userSearch.value.trim().toLowerCase();
-  const users = state.users
-    .filter((user) => user.id !== currentUser.id)
-    .filter((user) => {
-      if (!query) {
-        return true;
-      }
+  const incomingRequests = getPendingIncomingRequests(currentUser.id)
+    .map((request) => ({
+      request,
+      user: getUserById(request.fromUserId),
+    }))
+    .filter((item) => item.user)
+    .filter(({ user }) => matchesUserSearch(user, query))
+    .sort((a, b) => a.user.displayName.localeCompare(b.user.displayName));
 
-      return (
-        user.displayName.toLowerCase().includes(query) ||
-        user.username.toLowerCase().includes(query)
-      );
-    })
+  const friends = state.users
+    .filter((user) => user.id !== currentUser.id)
+    .filter((user) => areFriends(currentUser.id, user.id))
+    .filter((user) => matchesUserSearch(user, query))
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+  const discoverableUsers = query
+    ? state.users
+      .filter((user) => user.id !== currentUser.id)
+      .filter((user) => !areFriends(currentUser.id, user.id))
+      .filter((user) => !incomingRequests.some((item) => item.user.id === user.id))
+      .filter((user) => matchesUserSearch(user, query))
+      .sort((a, b) => a.displayName.localeCompare(b.displayName))
+    : [];
 
   els.userResults.innerHTML = "";
 
-  if (users.length === 0) {
+  if (incomingRequests.length === 0 && friends.length === 0 && discoverableUsers.length === 0) {
     const empty = document.createElement("p");
     empty.className = "hint";
-    empty.textContent = "No users match your search yet.";
+    empty.textContent = query
+      ? "No users match your search yet."
+      : "Search by name or username to add people.";
     els.userResults.appendChild(empty);
     return;
   }
 
-  users.forEach((user) => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = `user-card ${state.activeChatUserId === user.id ? "active" : ""}`;
-    card.innerHTML = `
-      <div class="user-meta">
-        <strong>${escapeHtml(user.displayName)}</strong>
-        <p>${escapeHtml(user.username)}</p>
-      </div>
-      <span>Open</span>
-    `;
-    card.addEventListener("click", () => {
-      state.activeChatUserId = user.id;
-      setViewMode("chat");
-      renderUserList();
-      renderMessages();
+  if (incomingRequests.length > 0) {
+    appendPeopleSection("Requests", incomingRequests, ({ user, request }) => {
+      els.userResults.appendChild(createUserCard(user, {
+        badge: "Wants to connect",
+        actions: [
+          { label: "Accept", className: "primary-mini-btn", onClick: () => acceptFriendRequest(request.id) },
+          { label: "Decline", className: "ghost-mini-btn", onClick: () => declineFriendRequest(request.id) },
+        ],
+      }));
     });
-    els.userResults.appendChild(card);
+  }
+
+  if (friends.length > 0) {
+    appendPeopleSection("Friends", friends, (user) => {
+      els.userResults.appendChild(createUserCard(user, {
+        badge: state.activeChatUserId === user.id ? "Open" : "Message",
+        active: state.activeChatUserId === user.id,
+        onClick: () => openConversation(user.id),
+      }));
+    });
+  }
+
+  if (discoverableUsers.length > 0) {
+    appendPeopleSection("Find People", discoverableUsers, (user) => {
+      const request = getRequestBetween(currentUser.id, user.id);
+      const sentByCurrentUser = request?.fromUserId === currentUser.id && request.status === "pending";
+      els.userResults.appendChild(createUserCard(user, {
+        badge: sentByCurrentUser ? "Request sent" : "Not connected",
+        actions: sentByCurrentUser
+          ? []
+          : [{ label: "Add", className: "primary-mini-btn", onClick: () => sendFriendRequest(user.id) }],
+      }));
+    });
+  }
+}
+
+function matchesUserSearch(user, query) {
+  if (!query) {
+    return true;
+  }
+
+  return (
+    user.displayName.toLowerCase().includes(query) ||
+    user.username.toLowerCase().includes(query)
+  );
+}
+
+function appendPeopleSection(title, items, renderItem) {
+  const heading = document.createElement("p");
+  heading.className = "people-section-label";
+  heading.textContent = title;
+  els.userResults.appendChild(heading);
+  items.forEach(renderItem);
+}
+
+function createUserCard(user, options = {}) {
+  const card = document.createElement(options.onClick ? "button" : "div");
+  if (options.onClick) {
+    card.type = "button";
+  }
+  card.className = `user-card ${options.active ? "active" : ""}`;
+  card.innerHTML = `
+    <div class="user-meta">
+      <strong>${escapeHtml(user.displayName)}</strong>
+      <p>${escapeHtml(user.username)}</p>
+    </div>
+    <div class="user-actions">
+      <span>${escapeHtml(options.badge || "")}</span>
+    </div>
+  `;
+
+  const actions = card.querySelector(".user-actions");
+  (options.actions || []).forEach((action) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = action.className;
+    button.textContent = action.label;
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      Promise.resolve(action.onClick()).catch((error) => {
+        console.error("PulseChat friend action failed", error);
+        showToast("That friend action could not be completed.");
+      });
+    });
+    actions.appendChild(button);
   });
+
+  if (options.onClick) {
+    card.addEventListener("click", options.onClick);
+  }
+
+  return card;
+}
+
+function openConversation(userId) {
+  const currentUser = getCurrentUser();
+  if (!currentUser || !areFriends(currentUser.id, userId)) {
+    showToast("Connect with this person before messaging.");
+    return;
+  }
+
+  state.activeChatUserId = userId;
+  setViewMode("chat");
+  renderUserList();
+  renderMessages();
+}
+
+async function sendFriendRequest(toUserId) {
+  const currentUser = getCurrentUser();
+  const targetUser = getUserById(toUserId);
+  if (!currentUser || !targetUser || currentUser.id === targetUser.id) {
+    return;
+  }
+
+  const existingRequest = getRequestBetween(currentUser.id, targetUser.id);
+  if (existingRequest?.status === "accepted") {
+    openConversation(targetUser.id);
+    return;
+  }
+
+  if (existingRequest?.status === "pending") {
+    showToast("There is already a pending request.");
+    return;
+  }
+
+  if (existingRequest) {
+    existingRequest.fromUserId = currentUser.id;
+    existingRequest.toUserId = targetUser.id;
+    existingRequest.status = "pending";
+    existingRequest.createdAt = new Date().toISOString();
+  } else {
+    state.friendRequests.push(createFriendRequestRecord(currentUser.id, targetUser.id));
+  }
+
+  await saveState();
+  renderUserList();
+  showToast(`Friend request sent to ${targetUser.displayName}.`);
+}
+
+async function acceptFriendRequest(requestId) {
+  const currentUser = getCurrentUser();
+  const request = state.friendRequests.find((item) => item.id === requestId);
+  if (!currentUser || !request || request.toUserId !== currentUser.id) {
+    return;
+  }
+
+  request.status = "accepted";
+  request.respondedAt = new Date().toISOString();
+  state.activeChatUserId = request.fromUserId;
+  await saveState();
+  setViewMode("chat");
+  renderUserList();
+  renderMessages();
+  showToast("Friend request accepted.");
+}
+
+async function declineFriendRequest(requestId) {
+  const currentUser = getCurrentUser();
+  const request = state.friendRequests.find((item) => item.id === requestId);
+  if (!currentUser || !request || request.toUserId !== currentUser.id) {
+    return;
+  }
+
+  request.status = "declined";
+  request.respondedAt = new Date().toISOString();
+  if (state.activeChatUserId === request.fromUserId) {
+    state.activeChatUserId = null;
+  }
+  await saveState();
+  renderUserList();
+  renderMessages();
+  showToast("Friend request declined.");
 }
 
 function renderMessages() {
   const currentUser = getCurrentUser();
   const targetUser = getUserById(state.activeChatUserId);
 
-  if (!currentUser || !targetUser) {
+  if (!currentUser || !targetUser || !areFriends(currentUser.id, targetUser.id)) {
     els.chatEmpty.classList.remove("hidden");
     els.chatWindow.classList.add("hidden");
     return;
@@ -599,7 +824,8 @@ async function handleSignup(event) {
   const newUser = createUserRecord(displayName, email, password);
   state.users.push(newUser);
   state.currentUserId = newUser.id;
-  state.activeChatUserId = state.users.find((user) => user.id !== newUser.id)?.id || null;
+  state.activeChatUserId = null;
+  resetPeopleSearch();
   setViewMode("friends");
   await saveState();
   els.signupForm.reset();
@@ -621,7 +847,8 @@ async function handleLogin(event) {
   }
 
   state.currentUserId = user.id;
-  state.activeChatUserId = state.users.find((item) => item.id !== user.id)?.id || null;
+  state.activeChatUserId = null;
+  resetPeopleSearch();
   setViewMode("friends");
   await saveState();
   els.loginForm.reset();
@@ -634,6 +861,7 @@ async function handleLogout() {
   state.currentUserId = null;
   state.activeChatUserId = null;
   state.viewMode = "friends";
+  resetPeopleSearch();
   els.themePanel.classList.add("hidden");
   await saveState();
   renderAuth();
@@ -650,7 +878,7 @@ async function handleSendMessage(event) {
   const text = els.messageInput.value.trim();
   const attachment = state.pendingAttachment;
 
-  if (!currentUser || !targetUser || (!text && !attachment)) {
+  if (!currentUser || !targetUser || !areFriends(currentUser.id, targetUser.id) || (!text && !attachment)) {
     return;
   }
 

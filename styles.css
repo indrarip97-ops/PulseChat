@@ -484,6 +484,15 @@ button:hover {
   margin-top: 16px;
 }
 
+.people-section-label {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .user-card {
   border: 1px solid rgba(23, 50, 77, 0.08);
   background: linear-gradient(180deg, #ffffff, #f8fbff);
@@ -493,6 +502,13 @@ button:hover {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
+  color: var(--ink);
+  text-align: left;
+}
+
+.user-card:is(button) {
+  cursor: pointer;
 }
 
 .user-card.active {
@@ -507,6 +523,36 @@ button:hover {
 
 .user-meta p {
   margin: 4px 0 0;
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  text-align: right;
+}
+
+.primary-mini-btn,
+.ghost-mini-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-mini-btn {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.ghost-mini-btn {
+  background: rgba(23, 50, 77, 0.08);
+  color: var(--navy);
 }
 
 .chat-panel {
