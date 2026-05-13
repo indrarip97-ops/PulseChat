@@ -355,7 +355,7 @@ function setViewMode(mode) {
 function renderViewMode() {
   const isChat = state.viewMode === "chat" && Boolean(state.activeChatUserId);
   els.chatView.classList.toggle("chat-focused", isChat);
-  els.friendsBtn.classList.toggle("active", !isChat);
+  els.friendsBtn?.classList.toggle("active", !isChat);
   els.backToFriendsBtn.classList.toggle("hidden", !isChat);
 }
 
@@ -1071,7 +1071,7 @@ function attachEvents() {
     });
   });
   els.userSearch.addEventListener("input", renderUserList);
-  els.friendsBtn.addEventListener("click", () => {
+  els.friendsBtn?.addEventListener("click", () => {
     setViewMode("friends");
   });
   els.backToFriendsBtn.addEventListener("click", () => {
