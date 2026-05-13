@@ -499,7 +499,7 @@ button:hover {
   border-radius: 22px;
   padding: 15px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   width: 100%;
@@ -522,6 +522,18 @@ button:hover {
   display: block;
 }
 
+.sidebar-top h2,
+.user-meta {
+  min-width: 0;
+}
+
+.sidebar-top h2,
+.user-meta strong,
+.user-meta p,
+.user-meta span {
+  overflow-wrap: anywhere;
+}
+
 .user-meta p {
   margin: 4px 0 0;
 }
@@ -537,6 +549,7 @@ button:hover {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
+  flex-shrink: 0;
   gap: 8px;
   color: var(--muted);
   font-size: 0.86rem;

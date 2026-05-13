@@ -339,8 +339,8 @@ function renderAuth() {
     return;
   }
 
-  els.currentDisplayName.textContent = currentUser.displayName;
-  els.currentUsername.textContent = currentUser.username;
+  els.currentDisplayName.textContent = currentUser.email;
+  els.currentUsername.textContent = `Display name: ${currentUser.displayName}`;
   renderViewMode();
   renderLikedBanner();
   renderThemeOptions();
@@ -622,8 +622,8 @@ function createUserCard(user, options = {}) {
   card.className = `user-card ${options.active ? "active" : ""}`;
   card.innerHTML = `
     <div class="user-meta">
-      <strong>${escapeHtml(user.displayName)}</strong>
-      <p>${escapeHtml(options.detail || user.email)}</p>
+      <strong>${escapeHtml(user.email)}</strong>
+      <p>Display name: ${escapeHtml(user.displayName)}</p>
       <span>${escapeHtml(user.username)}</span>
     </div>
     <div class="user-actions">
