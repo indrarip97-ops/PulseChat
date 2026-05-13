@@ -339,8 +339,8 @@ function renderAuth() {
     return;
   }
 
-  els.currentDisplayName.textContent = currentUser.email;
-  els.currentUsername.textContent = `Display name: ${currentUser.displayName}`;
+  els.currentDisplayName.textContent = currentUser.displayName;
+  els.currentUsername.textContent = currentUser.email;
   renderViewMode();
   renderLikedBanner();
   renderThemeOptions();

@@ -230,18 +230,18 @@ button:hover {
 }
 
 .chat-view {
-  width: min(1380px, calc(100% - 36px));
-  margin: 18px auto;
-  min-height: calc(100vh - 36px);
+  width: min(1440px, calc(100% - 40px));
+  margin: 20px auto;
+  min-height: calc(100vh - 40px);
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 26px;
 }
 
 .sidebar,
 .chat-shell {
   display: grid;
-  gap: 18px;
+  gap: 20px;
   align-content: start;
 }
 
@@ -255,16 +255,31 @@ button:hover {
 .search-panel,
 .people-panel,
 .chat-panel {
-  padding: 22px;
+  padding: 24px;
 }
 
-.sidebar-top,
 .chat-header,
 .panel-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.sidebar-top {
+  display: grid;
+  gap: 18px;
+}
+
+.sidebar-top h2 {
+  font-size: clamp(2rem, 3vw, 2.9rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.sidebar-top .username {
+  margin: 8px 0 0;
+  font-size: 0.94rem;
 }
 
 .friends-nav {
@@ -306,17 +321,21 @@ button:hover {
 }
 
 .sidebar-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.sidebar-actions .ghost-btn {
+  min-height: 48px;
+  padding: 12px 14px;
 }
 
 .display-hero {
   background: linear-gradient(135deg, var(--hero-start), var(--hero-mid) 58%, var(--hero-end));
   color: #f8fbff;
-  border-radius: 34px;
-  padding: 30px;
+  border-radius: 26px;
+  padding: 18px 20px;
   position: relative;
   overflow: hidden;
 }
@@ -341,19 +360,23 @@ button:hover {
 .liked-banner {
   max-width: 100%;
   font-family: "Space Grotesk", var(--font-ui);
-  font-size: clamp(1rem, 2vw, 1.4rem);
-  line-height: 1.45;
+  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+  line-height: 1.25;
   color: #fffaf3;
-  text-wrap: balance;
   text-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
   white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hero-title-muted {
-  font-size: clamp(1.4rem, 2.2vw, 2rem) !important;
-  line-height: 1.1 !important;
-  opacity: 0.88;
-  max-width: none !important;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
 }
 
 .liked-editor {
@@ -383,10 +406,10 @@ button:hover {
 .display-hero::after {
   content: "";
   position: absolute;
-  width: 260px;
-  height: 260px;
-  right: -90px;
-  top: -110px;
+  width: 180px;
+  height: 180px;
+  right: -70px;
+  top: -95px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.2), transparent 70%);
   pointer-events: none;
@@ -402,10 +425,7 @@ button:hover {
 }
 
 .hero-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 18px;
+  display: none;
 }
 
 .hero-pills span {
@@ -417,7 +437,7 @@ button:hover {
 }
 
 .people-panel {
-  min-height: 420px;
+  min-height: 360px;
 }
 
 .theme-panel {
