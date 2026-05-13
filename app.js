@@ -1105,26 +1105,28 @@ function attachEvents() {
   els.fileInput.addEventListener("change", handleFileSelection);
   els.emojiBtn.addEventListener("click", toggleEmojiPicker);
   els.themeBtn.addEventListener("click", toggleThemePanel);
-  els.changeLikedBtn.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    showLikedPrompt();
-  });
-  els.saveLikedBtn.addEventListener("click", () => {
-    saveLikedThing().catch((error) => {
-      console.error("PulseChat liked save failed", error);
-      showToast("Could not update loved text right now.");
-    });
-  });
-  els.likedInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
+  if (els.changeLikedBtn && els.saveLikedBtn && els.likedInput && els.likedEditor) {
+    els.changeLikedBtn.addEventListener("click", (event) => {
       event.preventDefault();
+      event.stopPropagation();
+      showLikedPrompt();
+    });
+    els.saveLikedBtn.addEventListener("click", () => {
       saveLikedThing().catch((error) => {
         console.error("PulseChat liked save failed", error);
         showToast("Could not update loved text right now.");
       });
-    }
-  });
+    });
+    els.likedInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        saveLikedThing().catch((error) => {
+          console.error("PulseChat liked save failed", error);
+          showToast("Could not update loved text right now.");
+        });
+      }
+    });
+  }
   document.addEventListener("click", (event) => {
     if (!els.emojiPicker.contains(event.target) && event.target !== els.emojiBtn) {
       closeEmojiPicker();
@@ -1132,7 +1134,12 @@ function attachEvents() {
     if (!els.themePanel.contains(event.target) && event.target !== els.themeBtn) {
       els.themePanel.classList.add("hidden");
     }
-    if (!els.likedEditor.contains(event.target) && !els.changeLikedBtn.contains(event.target)) {
+    if (
+      els.likedEditor &&
+      els.changeLikedBtn &&
+      !els.likedEditor.contains(event.target) &&
+      !els.changeLikedBtn.contains(event.target)
+    ) {
       if (getCurrentUser()?.likedThing) {
         closeLikedEditor();
       }
