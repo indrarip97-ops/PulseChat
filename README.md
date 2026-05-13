@@ -12,15 +12,18 @@ PulseChat is a simple browser-based messaging website demo.
 - Send direct messages between connected friends
 - Delete messages from a conversation
 - Automatically remove messages after 30 days
-- Data is saved locally in the browser with IndexedDB
+- Data is saved in a shared local server file when you run `server.js`
 
 ## How to run
 
-1. Open `index.html` in a web browser.
-2. Create a new account and start using the app.
+1. Run `node server.js`.
+2. Open `http://127.0.0.1:4173` in any browser.
+3. Create an account or log in.
 
 ## Notes
 
-- This is a frontend-only demo, so data is stored only on the device and browser where it is opened.
+- Run the app through `server.js` if you want Chrome, Edge, and other browsers to share the same accounts.
+- Opening `index.html` directly still works as a browser-only fallback, but each browser will have separate accounts.
+- Shared app data is saved in `pulsechat-data.json` on this computer.
 - The app removes expired messages whenever it loads or saves chat data.
 - If you want, this can be upgraded next into a real full-stack app with a database and live multi-user messaging.

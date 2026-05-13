@@ -6,6 +6,7 @@ const DB_NAME = "pulsechat-db";
 const DB_VERSION = 1;
 const DB_STORE = "appState";
 const DB_KEY = "main";
+const SHARED_STATE_URL = "/api/state";
 const EMOJIS = [
   "\u{1F600}", "\u{1F602}", "\u{1F979}", "\u{1F60D}", "\u{1F60E}", "\u{1F914}", "\u{1F62D}",
   "\u{1F525}", "\u{2764}\u{FE0F}", "\u{1F44D}", "\u{1F44F}", "\u{1F64F}", "\u{1F389}", "\u{2728}",
@@ -30,6 +31,7 @@ const state = {
   viewMode: "friends",
 };
 let dbPromise;
+let sharedStorageAvailable = false;
 
 const els = {
   authView: document.getElementById("auth-view"),
@@ -128,35 +130,101 @@ async function writePersistedState(snapshot) {
   });
 }
 
-async function loadState() {
-  let parsed = null;
+async function readSharedState() {
+  const response = await fetch(SHARED_STATE_URL, {
+    cache: "no-store",
+  });
 
-  try {
-    parsed = await readPersistedState();
-  } catch (error) {
-    console.error("PulseChat failed to load IndexedDB state", error);
+  if (!response.ok) {
+    throw new Error(`Shared state request failed: ${response.status}`);
   }
 
-  if (!parsed) {
-    const legacySaved = localStorage.getItem(STORAGE_KEY);
-    if (legacySaved) {
-      parsed = JSON.parse(legacySaved);
-      localStorage.removeItem(STORAGE_KEY);
+  sharedStorageAvailable = true;
+  return response.json();
+}
+
+async function writeSharedState(snapshot) {
+  const response = await fetch(SHARED_STATE_URL, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(snapshot),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Shared state save failed: ${response.status}`);
+  }
+
+  sharedStorageAvailable = true;
+}
+
+function createDataSnapshot(includeCurrentUser = true) {
+  const snapshot = {
+    users: state.users,
+    messages: state.messages,
+    friendRequests: state.friendRequests,
+  };
+
+  if (includeCurrentUser) {
+    snapshot.currentUserId = state.currentUserId;
+  }
+
+  return snapshot;
+}
+
+function snapshotHasSharedData(snapshot) {
+  return Boolean(
+    snapshot &&
+    ((snapshot.users || []).length > 0 ||
+      (snapshot.messages || []).length > 0 ||
+      (snapshot.friendRequests || []).length > 0)
+  );
+}
+
+function mergeSnapshots(sharedSnapshot, localSnapshot) {
+  const merged = {
+    users: [...(sharedSnapshot?.users || [])],
+    messages: [...(sharedSnapshot?.messages || [])],
+    friendRequests: [...(sharedSnapshot?.friendRequests || [])],
+    currentUserId: localSnapshot?.currentUserId || null,
+  };
+  const userEmails = new Set(merged.users.map((user) => user.email));
+  const messageIds = new Set(merged.messages.map((message) => message.id));
+  const requestIds = new Set(merged.friendRequests.map((request) => request.id));
+
+  (localSnapshot?.users || []).forEach((user) => {
+    if (!userEmails.has(user.email)) {
+      merged.users.push(user);
+      userEmails.add(user.email);
     }
-  }
+  });
 
-  if (!parsed) {
-    cleanupExpiredMessages();
-    await saveState();
-    return;
-  }
+  (localSnapshot?.messages || []).forEach((message) => {
+    if (!messageIds.has(message.id)) {
+      merged.messages.push(message);
+      messageIds.add(message.id);
+    }
+  });
 
-  state.users = parsed.users || [];
-  state.messages = parsed.messages || [];
-  state.friendRequests = parsed.friendRequests || [];
-  state.currentUserId = parsed.currentUserId || null;
+  (localSnapshot?.friendRequests || []).forEach((request) => {
+    if (!requestIds.has(request.id)) {
+      merged.friendRequests.push(request);
+      requestIds.add(request.id);
+    }
+  });
+
+  return merged;
+}
+
+function applySnapshot(snapshot) {
+  state.users = snapshot?.users || [];
+  state.messages = snapshot?.messages || [];
+  state.friendRequests = snapshot?.friendRequests || [];
+  state.currentUserId = snapshot?.currentUserId || null;
   state.users = state.users.map((user) => ({
     ...user,
+    email: user.email.trim().toLowerCase(),
     themeId: user.themeId || DEFAULT_THEME_ID,
     likedThing: user.likedThing || "",
   }));
@@ -168,18 +236,91 @@ async function loadState() {
     state.users.some((user) => user.id === request.fromUserId) &&
     state.users.some((user) => user.id === request.toUserId)
   ));
+
+  if (state.currentUserId && !state.users.some((user) => user.id === state.currentUserId)) {
+    state.currentUserId = null;
+  }
+
   cleanupExpiredMessages();
   ensureActiveChatIsValid();
 }
 
+async function loadState() {
+  let localSnapshot = null;
+  let sharedSnapshot = null;
+
+  try {
+    localSnapshot = await readPersistedState();
+  } catch (error) {
+    console.error("PulseChat failed to load IndexedDB state", error);
+  }
+
+  if (!localSnapshot) {
+    const legacySaved = localStorage.getItem(STORAGE_KEY);
+    if (legacySaved) {
+      localSnapshot = JSON.parse(legacySaved);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+
+  try {
+    sharedSnapshot = await readSharedState();
+  } catch (error) {
+    sharedStorageAvailable = false;
+    console.info("PulseChat shared storage unavailable; using this browser only.", error);
+  }
+
+  if (sharedStorageAvailable) {
+    const mergedSnapshot = snapshotHasSharedData(localSnapshot)
+      ? mergeSnapshots(sharedSnapshot, localSnapshot)
+      : {
+        ...(sharedSnapshot || {}),
+        currentUserId: localSnapshot?.currentUserId || null,
+      };
+    applySnapshot(mergedSnapshot);
+    await saveState();
+    return;
+  }
+
+  applySnapshot(localSnapshot || {});
+  await saveState();
+}
+
 async function saveState() {
   cleanupExpiredMessages();
-  await writePersistedState({
-    users: state.users,
-    messages: state.messages,
-    friendRequests: state.friendRequests,
-    currentUserId: state.currentUserId,
-  });
+  const localSnapshot = createDataSnapshot(true);
+  await writePersistedState(localSnapshot);
+
+  if (!sharedStorageAvailable) {
+    return;
+  }
+
+  try {
+    await writeSharedState(createDataSnapshot(false));
+  } catch (error) {
+    sharedStorageAvailable = false;
+    console.error("PulseChat failed to save shared state", error);
+    showToast("Shared save failed. This browser may be out of sync.");
+  }
+}
+
+async function refreshSharedState() {
+  if (!sharedStorageAvailable) {
+    return;
+  }
+
+  const currentUserId = state.currentUserId;
+  try {
+    const sharedSnapshot = await readSharedState();
+    applySnapshot({
+      ...sharedSnapshot,
+      currentUserId,
+    });
+    await writePersistedState(createDataSnapshot(true));
+  } catch (error) {
+    sharedStorageAvailable = false;
+    console.error("PulseChat failed to refresh shared state", error);
+  }
 }
 
 function createUserRecord(displayName, email, password) {
@@ -814,6 +955,7 @@ function renderAttachment(attachment) {
 
 async function handleSignup(event) {
   event.preventDefault();
+  await refreshSharedState();
 
   const displayName = els.signupDisplayName.value.trim();
   const email = els.signupEmail.value.trim().toLowerCase();
@@ -845,6 +987,7 @@ async function handleSignup(event) {
 
 async function handleLogin(event) {
   event.preventDefault();
+  await refreshSharedState();
 
   const email = els.loginEmail.value.trim().toLowerCase();
   const password = els.loginPassword.value;
@@ -1070,7 +1213,13 @@ function attachEvents() {
       showToast("Could not log out right now.");
     });
   });
-  els.userSearch.addEventListener("input", renderUserList);
+  els.userSearch.addEventListener("input", () => {
+    clearTimeout(els.userSearch.refreshTimeoutId);
+    els.userSearch.refreshTimeoutId = setTimeout(() => {
+      refreshSharedState().finally(renderUserList);
+    }, 150);
+    renderUserList();
+  });
   els.friendsBtn?.addEventListener("click", () => {
     setViewMode("friends");
   });
