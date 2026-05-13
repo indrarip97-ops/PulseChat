@@ -585,9 +585,11 @@ function renderUserList() {
       const request = getRequestBetween(currentUser.id, user.id);
       const sentByCurrentUser = request?.fromUserId === currentUser.id && request.status === "pending";
       els.userResults.appendChild(createUserCard(user, {
-        badge: sentByCurrentUser ? "Request sent" : "Click to add",
+        badge: sentByCurrentUser ? "Request sent" : "Found by email",
         detail: user.email,
-        onClick: sentByCurrentUser ? null : () => sendFriendRequest(user.id),
+        actions: sentByCurrentUser
+          ? []
+          : [{ label: "Add", className: "primary-mini-btn", onClick: () => sendFriendRequest(user.id) }],
       }));
     });
   }
