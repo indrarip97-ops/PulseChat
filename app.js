@@ -342,14 +342,9 @@ function renderAuth() {
   els.currentDisplayName.textContent = currentUser.displayName;
   els.currentUsername.textContent = currentUser.email;
   renderViewMode();
-  renderLikedBanner();
   renderThemeOptions();
   renderUserList();
   renderMessages();
-
-  if (!currentUser.likedThing) {
-    showLikedPrompt();
-  }
 }
 
 function setViewMode(mode) {

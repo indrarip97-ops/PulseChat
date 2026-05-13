@@ -232,10 +232,11 @@ button:hover {
 .chat-view {
   width: min(1440px, calc(100% - 40px));
   margin: 20px auto;
-  min-height: calc(100vh - 40px);
+  height: calc(100vh - 40px);
   display: grid;
   grid-template-columns: 380px minmax(0, 1fr);
   gap: 26px;
+  overflow: hidden;
 }
 
 .sidebar,
@@ -243,6 +244,16 @@ button:hover {
   display: grid;
   gap: 20px;
   align-content: start;
+  min-height: 0;
+}
+
+.sidebar {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.chat-shell {
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .card-surface {
@@ -297,29 +308,6 @@ button:hover {
   color: var(--ink);
 }
 
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 6px 8px 2px;
-}
-
-.sidebar-brand-logo {
-  width: 96px;
-  height: 96px;
-  object-fit: contain;
-  border-radius: 18px;
-  box-shadow: 0 10px 22px rgba(31, 54, 86, 0.12);
-}
-
-.sidebar-brand-name {
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-  line-height: 1;
-}
-
 .sidebar-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -332,12 +320,7 @@ button:hover {
 }
 
 .display-hero {
-  background: linear-gradient(135deg, var(--hero-start), var(--hero-mid) 58%, var(--hero-end));
-  color: #f8fbff;
-  border-radius: 26px;
-  padding: 18px 20px;
-  position: relative;
-  overflow: hidden;
+  display: none;
 }
 
 .hero-top {
@@ -437,7 +420,10 @@ button:hover {
 }
 
 .people-panel {
-  min-height: 360px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .theme-panel {
@@ -502,6 +488,8 @@ button:hover {
 
 .user-list {
   margin-top: 16px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .people-section-label {
@@ -596,7 +584,8 @@ button:hover {
 }
 
 .chat-panel {
-  min-height: 640px;
+  min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -637,8 +626,8 @@ button:hover {
   display: flex !important;
   flex-direction: column;
   align-items: stretch;
-  min-height: 420px;
-  max-height: 560px;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   padding-right: 4px;
 }
