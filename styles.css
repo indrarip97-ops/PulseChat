@@ -517,12 +517,19 @@ button:hover {
 }
 
 .user-meta strong,
-.user-meta p {
+.user-meta p,
+.user-meta span {
   display: block;
 }
 
 .user-meta p {
   margin: 4px 0 0;
+}
+
+.user-meta span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .user-actions {

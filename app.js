@@ -251,10 +251,18 @@ function getUserById(userId) {
 }
 
 function getRequestBetween(userAId, userBId) {
-  return state.friendRequests.find((request) => (
-    [request.fromUserId, request.toUserId].includes(userAId) &&
-    [request.fromUserId, request.toUserId].includes(userBId)
-  )) || null;
+  const statusOrder = {
+    accepted: 0,
+    pending: 1,
+    declined: 2,
+  };
+
+  return state.friendRequests
+    .filter((request) => (
+      [request.fromUserId, request.toUserId].includes(userAId) &&
+      [request.fromUserId, request.toUserId].includes(userBId)
+    ))
+    .sort((a, b) => (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3))[0] || null;
 }
 
 function hasConversationHistory(userAId, userBId) {
@@ -548,7 +556,7 @@ function renderUserList() {
     empty.className = "hint";
     empty.textContent = query
       ? "No users match your search yet."
-      : "Search by name or username to add people.";
+      : "Search by email to add people.";
     els.userResults.appendChild(empty);
     return;
   }
@@ -557,6 +565,7 @@ function renderUserList() {
     appendPeopleSection("Requests", incomingRequests, ({ user, request }) => {
       els.userResults.appendChild(createUserCard(user, {
         badge: "Wants to connect",
+        detail: user.email,
         actions: [
           { label: "Accept", className: "primary-mini-btn", onClick: () => acceptFriendRequest(request.id) },
           { label: "Decline", className: "ghost-mini-btn", onClick: () => declineFriendRequest(request.id) },
@@ -569,6 +578,7 @@ function renderUserList() {
     appendPeopleSection("Friends", friends, (user) => {
       els.userResults.appendChild(createUserCard(user, {
         badge: state.activeChatUserId === user.id ? "Open" : "Message",
+        detail: user.email,
         active: state.activeChatUserId === user.id,
         onClick: () => openConversation(user.id),
       }));
@@ -580,10 +590,9 @@ function renderUserList() {
       const request = getRequestBetween(currentUser.id, user.id);
       const sentByCurrentUser = request?.fromUserId === currentUser.id && request.status === "pending";
       els.userResults.appendChild(createUserCard(user, {
-        badge: sentByCurrentUser ? "Request sent" : "Not connected",
-        actions: sentByCurrentUser
-          ? []
-          : [{ label: "Add", className: "primary-mini-btn", onClick: () => sendFriendRequest(user.id) }],
+        badge: sentByCurrentUser ? "Request sent" : "Click to add",
+        detail: user.email,
+        onClick: sentByCurrentUser ? null : () => sendFriendRequest(user.id),
       }));
     });
   }
@@ -594,10 +603,7 @@ function matchesUserSearch(user, query) {
     return true;
   }
 
-  return (
-    user.displayName.toLowerCase().includes(query) ||
-    user.username.toLowerCase().includes(query)
-  );
+  return user.email.toLowerCase().includes(query);
 }
 
 function appendPeopleSection(title, items, renderItem) {
@@ -617,7 +623,8 @@ function createUserCard(user, options = {}) {
   card.innerHTML = `
     <div class="user-meta">
       <strong>${escapeHtml(user.displayName)}</strong>
-      <p>${escapeHtml(user.username)}</p>
+      <p>${escapeHtml(options.detail || user.email)}</p>
+      <span>${escapeHtml(user.username)}</span>
     </div>
     <div class="user-actions">
       <span>${escapeHtml(options.badge || "")}</span>
@@ -641,7 +648,12 @@ function createUserCard(user, options = {}) {
   });
 
   if (options.onClick) {
-    card.addEventListener("click", options.onClick);
+    card.addEventListener("click", () => {
+      Promise.resolve(options.onClick()).catch((error) => {
+        console.error("PulseChat user card action failed", error);
+        showToast("That action could not be completed.");
+      });
+    });
   }
 
   return card;

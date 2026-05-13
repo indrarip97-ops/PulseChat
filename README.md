@@ -7,7 +7,7 @@ PulseChat is a simple browser-based messaging website demo.
 - Sign up with a display name, email, and password
 - Each account gets its own automatically generated unique username
 - Log in to an existing account
-- Search other users by display name or username
+- Search registered users by email
 - Send, receive, accept, and decline friend requests
 - Send direct messages between connected friends
 - Delete messages from a conversation
